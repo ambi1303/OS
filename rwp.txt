@@ -1,0 +1,52 @@
+#include <stdio.h>
+#include <pthread.h>
+#include <semaphore.h>
+
+sem_t wrt;
+pthread_mutex_t mutex;
+int read_count = 0;
+
+void *writer(void *arg) {
+    int writer_id = *((int *)arg);
+    sem_wait(&wrt);
+    printf("Writer %d is writing.\n", writer_id);
+    sem_post(&wrt);
+}
+
+void *reader(void *arg) {
+    int reader_id = *((int *)arg);
+    pthread_mutex_lock(&mutex);
+    read_count++;
+    if (read_count == 1) sem_wait(&wrt);
+    pthread_mutex_unlock(&mutex);
+
+    printf("Reader %d is reading.\n", reader_id);
+
+    pthread_mutex_lock(&mutex);
+    read_count--;
+    if (read_count == 0) sem_post(&wrt);
+    pthread_mutex_unlock(&mutex);
+}
+
+int main() {
+    pthread_t read[5], write[5];
+    int reader_id[5] = {1, 2, 3, 4, 5};
+    int writer_id[5] = {1, 2, 3, 4, 5};
+
+    sem_init(&wrt, 0, 1);
+    pthread_mutex_init(&mutex, NULL);
+
+    for (int i = 0; i < 5; i++) {
+        pthread_create(&write[i], NULL, writer, &writer_id[i]);
+        pthread_create(&read[i], NULL, reader, &reader_id[i]);
+    }
+
+    for (int i = 0; i < 5; i++) {
+        pthread_join(write[i], NULL);
+        pthread_join(read[i], NULL);
+    }
+
+    pthread_mutex_destroy(&mutex);
+    sem_destroy(&wrt);
+    return 0;
+}

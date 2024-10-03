@@ -1,0 +1,95 @@
+#include <stdio.h>
+
+int main() {
+    int n, m, i, j, k;
+
+    // Input: number of processes and resource types
+    printf("Enter the number of processes: ");
+    scanf("%d", &n);
+    printf("Enter the number of resource types: ");
+    scanf("%d", &m);
+    
+    // Declare matrices and arrays
+    int alloc[n][m], max[n][m], avail[m], need[n][m], work[m], finish[n], safeSeq[n];
+
+    // Input: allocation matrix
+    printf("Enter the allocation matrix:\n");
+    for (i = 0; i < n; i++) {
+        for (j = 0; j < m; j++) {
+            scanf("%d", &alloc[i][j]);
+        }
+    }
+
+    // Input: maximum matrix
+    printf("Enter the Max matrix:\n");
+    for (i = 0; i < n; i++) {
+        for (j = 0; j < m; j++) {
+            scanf("%d", &max[i][j]);
+        }
+    }
+
+    // Input: available resources
+    printf("Enter the available resources:\n");
+    for (i = 0; i < m; i++) {
+        scanf("%d", &avail[i]);
+    }
+
+    // Calculate need matrix (Need[i][j] = Max[i][j] - Alloc[i][j])
+    for (i = 0; i < n; i++) {
+        for (j = 0; j < m; j++) {
+            need[i][j] = max[i][j] - alloc[i][j];
+        }
+    }
+
+    // Initialize work (available resources) and finish arrays
+    for (i = 0; i < m; i++) {
+        work[i] = avail[i];
+    }
+
+    for (i = 0; i < n; i++) {
+        finish[i] = 0;  // 0 indicates that the process hasn't finished
+    }
+
+    int count = 0;
+    while (count < n) {
+        int found = 0;  // Used to check if a process was found in this iteration
+
+        // Check each process
+        for (i = 0; i < n; i++) {
+            if (!finish[i]) {  // If the process hasn't finished
+                // Check if the process can be executed (Need <= Work)
+                for (j = 0; j < m; j++) {
+                    if (need[i][j] > work[j])
+                        break;
+                }
+
+                // If all resources for the process can be satisfied (i.e., Need <= Work)
+                if (j == m) {
+                    // Add the allocated resources of this process back to Work
+                    for (k = 0; k < m; k++) {
+                        work[k] += alloc[i][k];
+                    }
+                    // Mark process as finished and add it to the safe sequence
+                    safeSeq[count++] = i;
+                    finish[i] = 1;
+                    found = 1;
+                }
+            }
+        }
+
+        // If no process was found in this iteration, the system is in an unsafe state
+        if (!found) {
+            printf("System is in an unsafe state\n");
+            return -1;
+        }
+    }
+
+    // If we exit the loop, the system is in a safe state, so print the safe sequence
+    printf("System is in a safe state.\nSafe sequence is: ");
+    for (i = 0; i < n; i++) {
+        printf("%d ", safeSeq[i]);
+    }
+    printf("\n");
+
+    return 0;
+}
