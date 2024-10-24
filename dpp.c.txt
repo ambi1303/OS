@@ -9,13 +9,20 @@ void *philosopher(void *arg) {
 
     printf("Philosopher %d is thinking.\n", id);
 
-    sem_wait(&forks[id]);
-    sem_wait(&forks[(id + 1) % 5]);
+    // Pick up forks: left first for all but philosopher 4, right first for philosopher 4
+    if (id == 4) {
+        sem_wait(&forks[(id + 1) % 5]);  // Right fork
+        sem_wait(&forks[id]);            // Left fork
+    } else {
+        sem_wait(&forks[id]);            // Left fork
+        sem_wait(&forks[(id + 1) % 5]);  // Right fork
+    }
 
     printf("Philosopher %d is eating.\n", id);
 
-    sem_post(&forks[id]);
-    sem_post(&forks[(id + 1) % 5]);
+    // Put down forks
+    sem_post(&forks[id]);                // Left fork
+    sem_post(&forks[(id + 1) % 5]);      // Right fork
 
     printf("Philosopher %d is done eating.\n", id);
 }
@@ -24,17 +31,25 @@ int main() {
     pthread_t philosophers[5];
     int philosopher_ids[5] = {0, 1, 2, 3, 4};
 
-    for (int i = 0; i < 5; i++) sem_init(&forks[i], 0, 1);
+    // Initialize semaphores (forks)
+    for (int i = 0; i < 5; i++) {
+        sem_init(&forks[i], 0, 1);
+    }
 
+    // Create philosopher threads
     for (int i = 0; i < 5; i++) {
         pthread_create(&philosophers[i], NULL, philosopher, &philosopher_ids[i]);
     }
 
+    // Join philosopher threads (wait for them to finish)
     for (int i = 0; i < 5; i++) {
         pthread_join(philosophers[i], NULL);
     }
 
-    for (int i = 0; i < 5; i++) sem_destroy(&forks[i]);
+    // Destroy semaphores (clean up)
+    for (int i = 0; i < 5; i++) {
+        sem_destroy(&forks[i]);
+    }
 
     return 0;
 }
